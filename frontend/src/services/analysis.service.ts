@@ -13,3 +13,15 @@ export const runPythonCode = async (
 
   return response.data.submission;
 };
+
+export const generateAIExplanation = async (
+  submissionId: string,
+  accessToken: string,
+): Promise<SubmissionResult> => {
+  const response = await apiRequest<{ submission: SubmissionResult }>(`/analysis/${submissionId}/explain`, {
+    method: 'POST',
+    token: accessToken,
+  });
+
+  return response.data.submission;
+};

@@ -1,8 +1,19 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Copy, Code, AlertTriangle, ChevronDown, ChevronRight, RefreshCw, Loader2 } from 'lucide-react';
+
 import { parseAIExplanation } from '@/lib';
+import { generateAIExplanation } from '@/services';
+import { useAuth } from '@/hooks';
 import type { SubmissionResult } from '@/types';
+import { Button } from '@/components';
 
 interface ExecutionResultProps {
   result: SubmissionResult;
+  onUseCode?: (code: string) => void;
 }
 
 const statusStyles = {
@@ -17,19 +28,73 @@ const statusLabels = {
   runner_error: 'Runner error',
 } as const;
 
-function OutputBlock({ label, value }: Readonly<{ label: string; value: string }>) {
+function OutputBlock({ label, value, defaultOpen = true }: Readonly<{ label: string; value: string; defaultOpen?: boolean }>) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  if (!value) return null;
+
   return (
-    <div>
-      <h3 className="mb-2 text-xs font-bold tracking-wide text-slate-500 uppercase">{label}</h3>
+    <details className="group" open={defaultOpen} onToggle={(e) => setIsOpen(e.currentTarget.open)}>
+      <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 mb-2 text-xs font-bold tracking-wide text-slate-500 uppercase transition-colors hover:text-slate-700">
+        {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        {label}
+      </summary>
       <pre className="max-h-52 min-h-20 overflow-auto rounded-lg bg-slate-950 p-4 font-mono text-xs leading-5 whitespace-pre-wrap text-slate-100">
-        {value || 'No output.'}
+        {value}
       </pre>
-    </div>
+    </details>
   );
 }
 
-export function ExecutionResult({ result }: ExecutionResultProps) {
-  const aiSections = result.aiExplanation ? parseAIExplanation(result.aiExplanation) : null;
+export function ExecutionResult({ result, onUseCode }: ExecutionResultProps) {
+  const { accessToken } = useAuth();
+  
+  const [aiExplanation, setAiExplanation] = useState<string | null>(result.aiExplanation);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [aiError, setAiError] = useState(false);
+  const [activeTab, setActiveTab] = useState<'what' | 'why' | 'fix' | 'code'>('what');
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setAiExplanation(result.aiExplanation);
+    setAiError(false);
+    
+    if (result.status === 'python_error' && !result.aiExplanation && accessToken) {
+      void handleGenerateAI();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result.id]);
+
+  const handleGenerateAI = async () => {
+    if (!accessToken) return;
+    setIsGeneratingAI(true);
+    setAiError(false);
+    try {
+      const updatedResult = await generateAIExplanation(result.id, accessToken);
+      setAiExplanation(updatedResult.aiExplanation);
+    } catch {
+      setAiError(true);
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleCopy = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Ignore clipboard error
+    }
+  };
+
+  const aiSections = aiExplanation ? parseAIExplanation(aiExplanation) : null;
+
+  const renderMarkdown = (content: string) => (
+    <div className="prose prose-sm prose-slate max-w-none text-slate-700">
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -62,43 +127,133 @@ export function ExecutionResult({ result }: ExecutionResultProps) {
         </div>
       </dl>
 
-      <OutputBlock label="Standard output" value={result.stdout} />
-      <OutputBlock label="Standard error" value={result.stderr} />
+      {result.stdout ? (
+        <div>
+          <h3 className="mb-2 text-xs font-bold tracking-wide text-slate-500 uppercase">Standard output</h3>
+          <pre className="max-h-52 min-h-20 overflow-auto rounded-lg bg-slate-950 p-4 font-mono text-xs leading-5 whitespace-pre-wrap text-slate-100">
+            {result.stdout}
+          </pre>
+        </div>
+      ) : null}
 
-      <section className="border-t border-slate-200 pt-6">
-        <h2 className="text-xl font-bold text-slate-950">AI feedback</h2>
+      <OutputBlock label="Standard error" value={result.stderr} defaultOpen={false} />
+      {result.traceback && <OutputBlock label="Traceback" value={result.traceback} defaultOpen={false} />}
+      {!result.stdout && !result.stderr && !result.traceback && (
+        <p className="text-sm text-slate-500 italic">No output.</p>
+      )}
 
-        {!aiSections ? (
-          <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            No AI explanation available.
-          </p>
-        ) : (
-          <div className="mt-4 space-y-5">
+      {result.status === 'python_error' && (
+        <section className="border-t border-slate-200 pt-6">
+          <div className="mb-4 flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Explanation</h3>
-              <p className="mt-2 text-sm leading-6 whitespace-pre-wrap text-slate-700">
-                {aiSections.explanation}
-              </p>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Suggested Fix</h3>
-              <p className="mt-2 text-sm leading-6 whitespace-pre-wrap text-slate-700">
-                {aiSections.suggestedFix}
-              </p>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Corrected Code</h3>
-              {aiSections.correctedCode ? (
-                <pre className="mt-2 overflow-auto rounded-lg bg-slate-950 p-4 font-mono text-xs leading-5 text-slate-100">
-                  {aiSections.correctedCode}
-                </pre>
-              ) : (
-                <p className="mt-2 text-sm text-slate-600">No corrected code was provided.</p>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                <h2 className="text-xl font-bold text-slate-950">AI feedback</h2>
+              </div>
+              {result.errorType && (
+                <span className="mt-2 inline-block rounded bg-red-100 px-2 py-1 font-mono text-xs font-semibold text-red-800">
+                  {result.errorType}
+                </span>
               )}
             </div>
           </div>
-        )}
-      </section>
+
+          {isGeneratingAI ? (
+            <div className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-50 p-8 text-slate-500">
+              <Loader2 className="mb-3 h-8 w-8 animate-spin text-blue-500" />
+              <p className="text-sm font-medium text-slate-700">Generating AI feedback…</p>
+              <p className="mt-1 text-xs text-slate-500">Gemini is analyzing your code</p>
+            </div>
+          ) : aiError ? (
+            <div className="flex flex-col items-center justify-center rounded-lg border border-red-200 bg-red-50 p-8 text-center">
+              <AlertTriangle className="mb-3 h-8 w-8 text-red-500" />
+              <p className="text-sm font-medium text-red-800">AI feedback is currently unavailable.</p>
+              <Button type="button" variant="secondary" onClick={() => void handleGenerateAI()} className="mt-4 flex items-center gap-2">
+                <RefreshCw className="h-4 w-4" /> Try again
+              </Button>
+            </div>
+          ) : aiSections ? (
+            <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
+              <div className="flex flex-wrap border-b border-slate-200 bg-slate-50">
+                <button
+                  className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'what' ? 'border-blue-500 text-blue-700 bg-white' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
+                  onClick={() => setActiveTab('what')}
+                >
+                  What happened
+                </button>
+                <button
+                  className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'why' ? 'border-blue-500 text-blue-700 bg-white' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
+                  onClick={() => setActiveTab('why')}
+                >
+                  Why it happened
+                </button>
+                <button
+                  className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'fix' ? 'border-blue-500 text-blue-700 bg-white' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
+                  onClick={() => setActiveTab('fix')}
+                >
+                  How to fix it
+                </button>
+                <button
+                  className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'code' ? 'border-blue-500 text-blue-700 bg-white' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
+                  onClick={() => setActiveTab('code')}
+                >
+                  Corrected code
+                </button>
+              </div>
+              <div className="p-5">
+                {activeTab === 'what' && (
+                  <div>
+                    {aiSections.whatHappened ? renderMarkdown(aiSections.whatHappened) : <p className="text-sm text-slate-500">Not provided.</p>}
+                  </div>
+                )}
+                {activeTab === 'why' && (
+                  <div>
+                    {aiSections.whyItHappened ? renderMarkdown(aiSections.whyItHappened) : <p className="text-sm text-slate-500">Not provided.</p>}
+                  </div>
+                )}
+                {activeTab === 'fix' && (
+                  <div>
+                    {aiSections.howToFixIt ? renderMarkdown(aiSections.howToFixIt) : <p className="text-sm text-slate-500">Not provided.</p>}
+                  </div>
+                )}
+                {activeTab === 'code' && (
+                  <div>
+                    {aiSections.correctedCode ? (
+                      <div>
+                        <div className="mb-4 flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => void handleCopy(aiSections.correctedCode!)}
+                            className="flex items-center gap-2"
+                          >
+                            <Copy className="h-4 w-4" /> {copied ? 'Copied!' : 'Copy corrected code'}
+                          </Button>
+                          {onUseCode && (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={() => onUseCode(aiSections.correctedCode!)}
+                              className="flex items-center gap-2 !bg-blue-50 !text-blue-700 hover:!bg-blue-100 !border-blue-200"
+                            >
+                              <Code className="h-4 w-4" /> Use this code in editor
+                            </Button>
+                          )}
+                        </div>
+                        <pre className="overflow-auto rounded-lg bg-slate-950 p-4 font-mono text-xs leading-5 text-slate-100">
+                          {aiSections.correctedCode}
+                        </pre>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500">No corrected code was provided.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </section>
+      )}
     </div>
   );
 }

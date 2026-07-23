@@ -1,4 +1,5 @@
 import { getEnvironment } from '../../config/index.js';
+import { logger } from '../../common/index.js';
 import { GeminiProvider } from './providers/gemini.provider.js';
 import { MockAIProvider } from './providers/mock.provider.js';
 import type { AIExplanationContext } from './ai.types.js';
@@ -26,8 +27,14 @@ export const getAIProvider = (): AIProvider => {
       model: environment.geminiModel,
       timeoutMs: environment.geminiTimeoutMs,
     });
+    logger.info('AI provider configured.', {
+      provider: 'gemini',
+      model: environment.geminiModel,
+      timeoutMs: environment.geminiTimeoutMs,
+    });
   } else {
     configuredProvider = new MockAIProvider();
+    logger.info('AI provider configured.', { provider: 'mock' });
   }
 
   return configuredProvider;

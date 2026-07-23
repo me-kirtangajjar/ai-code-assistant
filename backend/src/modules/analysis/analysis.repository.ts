@@ -31,3 +31,19 @@ export const createSubmission = async ({
     traceback: result.traceback,
     aiExplanation,
   });
+
+export const getSubmissionById = async (id: string, userId: string): Promise<SubmissionDocument | null> =>
+  SubmissionModel.findOne({
+    _id: new Types.ObjectId(id),
+    userId: new Types.ObjectId(userId),
+  });
+
+export const updateSubmissionExplanation = async (
+  id: string,
+  aiExplanation: string | null,
+): Promise<SubmissionDocument | null> =>
+  SubmissionModel.findByIdAndUpdate(
+    new Types.ObjectId(id),
+    { $set: { aiExplanation } },
+    { new: true },
+  );

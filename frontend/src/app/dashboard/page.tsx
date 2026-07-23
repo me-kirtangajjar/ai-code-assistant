@@ -79,7 +79,7 @@ function DashboardContent() {
 
           {!isRunning && error ? <ErrorMessage message={error} title="Execution failed" /> : null}
 
-          {!isRunning && result ? <ExecutionResult result={result} /> : null}
+          {!isRunning && result ? <ExecutionResult result={result} onUseCode={handleCodeChange} /> : null}
 
           {!isRunning && !error && !result ? (
             <div className="flex min-h-[430px] flex-col items-center justify-center px-5 text-center">

@@ -24,19 +24,15 @@ export const analyzeCode = async (
   userId: string,
   input: AnalysisInput,
 ): Promise<AnalysisResult> => {
+  logger.info('Python execution started for analysis.', {});
   const runnerResult = await executePython({
     language: 'python',
     code: input.code,
   });
 
-  const aiProvider: AIProvider = getAIProvider();
-  const aiExplanation = await generateExplanationForExecution(aiProvider, {
-    status: runnerResult.status,
-    language: 'python',
-    submittedCode: input.code,
-    errorType: runnerResult.errorType,
-    stderr: runnerResult.stderr,
-    traceback: runnerResult.traceback,
+  logger.info('Python execution completed for analysis.', {
+    executionStatus: runnerResult.status,
+    errorType: runnerResult.errorType ?? 'none',
   });
 
   try {
@@ -44,7 +40,7 @@ export const analyzeCode = async (
       userId,
       code: input.code,
       result: runnerResult,
-      aiExplanation,
+      aiExplanation: null, // AI explanation decoupled
     });
 
     return {
@@ -57,4 +53,38 @@ export const analyzeCode = async (
     });
     throw new AppError(503, 'DATABASE_UNAVAILABLE', 'The execution result could not be saved.');
   }
+};
+
+export const generateExplanationForSubmission = async (
+  userId: string,
+  submissionId: string,
+): Promise<SubmissionResponse> => {
+  const { getSubmissionById, updateSubmissionExplanation } = await import('./analysis.repository.js');
+  const submission = await getSubmissionById(submissionId, userId);
+
+  if (!submission) {
+    throw new AppError(404, 'SUBMISSION_NOT_FOUND', 'The requested submission could not be found.');
+  }
+
+  if (submission.status !== 'python_error') {
+    return toSubmissionResponse(submission);
+  }
+
+  const aiProvider: AIProvider = getAIProvider();
+  const aiExplanation = await generateExplanationForExecution(aiProvider, {
+    status: submission.status,
+    language: submission.language,
+    submittedCode: submission.code,
+    errorType: submission.errorType ?? null,
+    stderr: submission.stderr ?? null,
+    traceback: submission.traceback ?? null,
+  });
+
+  const updatedSubmission = await updateSubmissionExplanation(submissionId, aiExplanation);
+  
+  if (!updatedSubmission) {
+    throw new AppError(503, 'DATABASE_UNAVAILABLE', 'Could not update submission with AI explanation.');
+  }
+
+  return toSubmissionResponse(updatedSubmission);
 };

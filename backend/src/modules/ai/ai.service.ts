@@ -12,6 +12,10 @@ export const generateErrorExplanation = async (
   provider: AIProvider,
   context: AIExplanationContext,
 ): Promise<string | null> => {
+  logger.info('AI explanation generation started.', {
+    errorType: context.errorType ?? 'unknown',
+  });
+
   try {
     const explanation = (await provider.generateExplanation(context)).trim();
 
@@ -22,10 +26,15 @@ export const generateErrorExplanation = async (
       return null;
     }
 
+    logger.info('AI explanation generation completed.', {
+      errorType: context.errorType ?? 'unknown',
+      responseCharacters: explanation.length,
+    });
     return explanation;
   } catch (error) {
     logger.warn('AI explanation is unavailable.', {
       code: error instanceof AIProviderError ? error.code : 'AI_PROVIDER_FAILURE',
+      errorType: context.errorType ?? 'unknown',
     });
     return null;
   }
@@ -36,6 +45,9 @@ export const generateExplanationForExecution = async (
   context: ExecutionExplanationContext,
 ): Promise<string | null> => {
   if (context.status !== 'python_error') {
+    logger.info('AI explanation skipped because Python did not report an error.', {
+      executionStatus: context.status,
+    });
     return null;
   }
 

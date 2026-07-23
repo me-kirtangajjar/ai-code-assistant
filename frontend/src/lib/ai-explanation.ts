@@ -7,25 +7,39 @@ const cleanMarkdownLabel = (value: string): string =>
     .trim();
 
 export const parseAIExplanation = (value: string): AIExplanationSections => {
-  const codeMatch = /```(?:python)?\s*\n?([\s\S]*?)```/i.exec(value);
-  const correctedCode = codeMatch?.[1]?.trim() || null;
-  const withoutCode = value.replace(/```(?:python)?\s*\n?[\s\S]*?```/gi, '').trim();
-  const suggestedFixMatch = /(?:^|\n)\s*(?:\*\*)?Suggested Fix(?:\*\*)?:?\s*/i.exec(withoutCode);
+  const extractSection = (header: string, nextHeader?: string): string | null => {
+    const escapedHeader = header.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedNext = nextHeader ? nextHeader.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : null;
+    
+    const regex = new RegExp(
+      `##\\s*${escapedHeader}\\s*\\n([\\s\\S]*?)(?=${escapedNext ? `##\\s*${escapedNext}` : '$'})`,
+      'i'
+    );
+    
+    const match = regex.exec(value);
+    return match?.[1] ? match[1].trim() : null;
+  };
 
-  if (!suggestedFixMatch || suggestedFixMatch.index === undefined) {
-    return {
-      explanation: cleanMarkdownLabel(withoutCode),
-      suggestedFix: 'Review the explanation above and apply the recommended correction.',
-      correctedCode,
-    };
+  const whatHappened = extractSection('What happened', 'Why it happened');
+  const whyItHappened = extractSection('Why it happened', 'How to fix it');
+  const howToFixIt = extractSection('How to fix it', 'Corrected code');
+  const correctedCodeMatch = extractSection('Corrected code');
+  
+  let correctedCode: string | null = null;
+  if (correctedCodeMatch) {
+    const codeMatch = /```(?:python)?\s*\n?([\s\S]*?)```/i.exec(correctedCodeMatch);
+    correctedCode = codeMatch?.[1] ? codeMatch[1].trim() : correctedCodeMatch;
+  } else {
+    const codeMatch = /```(?:python)?\s*\n?([\s\S]*?)```/i.exec(value);
+    if (codeMatch?.[1]) {
+      correctedCode = codeMatch[1].trim();
+    }
   }
 
-  const explanation = withoutCode.slice(0, suggestedFixMatch.index);
-  const suggestedFix = withoutCode.slice(suggestedFixMatch.index + suggestedFixMatch[0].length);
-
   return {
-    explanation: cleanMarkdownLabel(explanation),
-    suggestedFix: cleanMarkdownLabel(suggestedFix),
+    whatHappened: whatHappened || 'Explanation not found.',
+    whyItHappened: whyItHappened || null,
+    howToFixIt: howToFixIt || null,
     correctedCode,
   };
 };

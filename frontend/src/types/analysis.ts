@@ -16,7 +16,8 @@ export interface SubmissionResult {
 }
 
 export interface AIExplanationSections {
-  explanation: string;
-  suggestedFix: string;
+  whatHappened: string | null;
+  whyItHappened: string | null;
+  howToFixIt: string | null;
   correctedCode: string | null;
 }

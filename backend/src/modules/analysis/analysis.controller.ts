@@ -39,3 +39,23 @@ export const runAnalysis: RequestHandler = async (request, response) => {
     },
   });
 };
+
+export const explainSubmission: RequestHandler = async (request, response) => {
+  if (!request.authenticatedUser) {
+    throw new AppError(401, 'AUTHENTICATION_REQUIRED', 'Authentication is required.');
+  }
+
+  const id = request.params.id as string;
+  const { generateExplanationForSubmission } = await import('./analysis.service.js');
+  
+  response.setHeader('Cache-Control', 'no-store');
+  const submission = await generateExplanationForSubmission(request.authenticatedUser.id, id);
+
+  response.status(200).json({
+    success: true,
+    message: 'AI explanation generated successfully.',
+    data: {
+      submission,
+    },
+  });
+};
