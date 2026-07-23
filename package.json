@@ -1,0 +1,24 @@
+{
+  "name": "ai-code-error-feedback-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-powered code error analysis and automated feedback system for programming education.",
+  "license": "MIT",
+  "packageManager": "pnpm@11.15.1",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=11.0.0"
+  },
+  "scripts": {
+    "dev:frontend": "pnpm --filter @ai-code-error-feedback/frontend dev",
+    "dev:backend": "pnpm --filter @ai-code-error-feedback/backend dev",
+    "build": "pnpm --recursive build",
+    "lint": "pnpm --recursive lint",
+    "typecheck": "pnpm --recursive typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "3.9.6"
+  }
+}

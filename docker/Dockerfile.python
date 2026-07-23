@@ -1,0 +1,22 @@
+FROM python:3.13-slim
+
+ARG RUNNER_UID=1000
+ARG RUNNER_GID=1000
+
+LABEL org.opencontainers.image.title="AI Code Error Feedback Python Runner"
+LABEL org.opencontainers.image.description="Minimal Python-only image for isolated student code execution"
+
+RUN groupadd --gid "${RUNNER_GID}" runner \
+    && useradd --uid "${RUNNER_UID}" --gid "${RUNNER_GID}" --no-create-home --shell /usr/sbin/nologin runner \
+    && command -v timeout >/dev/null
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONIOENCODING=utf-8
+
+WORKDIR /workspace
+
+USER runner:runner
+
+ENTRYPOINT ["timeout", "--signal=KILL", "6s", "python", "-I", "-B", "-u"]
+CMD ["/workspace/main.py"]

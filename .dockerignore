@@ -1,0 +1,16 @@
+.git
+.github
+.codex
+.agents
+**/node_modules
+**/.next
+**/dist
+**/coverage
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example
+!docker/.env.production.example
+docs
+python-runner
+*.log

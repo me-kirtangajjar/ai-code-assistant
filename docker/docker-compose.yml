@@ -1,0 +1,145 @@
+name: ai-code-error-feedback
+
+services:
+  mongodb:
+    image: mongo:8.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?Set MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-ai_code_error_feedback}
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - application
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'mongosh --quiet --username "$$MONGO_INITDB_ROOT_USERNAME" --password "$$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval "quit(db.adminCommand({ ping: 1 }).ok ? 0 : 2)"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+
+  python-runner-image:
+    profiles:
+      - build
+    image: ${PYTHON_RUNNER_IMAGE:-ai-code-error-feedback-python-runner:1.0.0}
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.python
+    entrypoint:
+      - /bin/true
+    restart: 'no'
+
+  backend:
+    image: ai-code-error-feedback-backend:${APP_IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:?Set MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DATABASE:-ai_code_error_feedback}?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      JWT_EXPIRES_IN: 7d
+      PYTHON_RUNNER_IMAGE: ${PYTHON_RUNNER_IMAGE:-ai-code-error-feedback-python-runner:1.0.0}
+      EXECUTION_TIMEOUT_MS: ${EXECUTION_TIMEOUT_MS:-5000}
+      EXECUTION_MEMORY_MB: ${EXECUTION_MEMORY_MB:-256}
+      EXECUTION_CPU_LIMIT: ${EXECUTION_CPU_LIMIT:-1}
+      EXECUTION_OUTPUT_LIMIT_BYTES: ${EXECUTION_OUTPUT_LIMIT_BYTES:-1048576}
+      EXECUTION_PID_LIMIT: ${EXECUTION_PID_LIMIT:-64}
+      EXECUTION_MAX_CONCURRENCY: ${EXECUTION_MAX_CONCURRENCY:-2}
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash}
+      GEMINI_TIMEOUT_MS: ${GEMINI_TIMEOUT_MS:-10000}
+      TMPDIR: ${RUNNER_WORKSPACE_DIR:?Set RUNNER_WORKSPACE_DIR}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+      - type: bind
+        source: ${RUNNER_WORKSPACE_DIR:?Set RUNNER_WORKSPACE_DIR}
+        target: ${RUNNER_WORKSPACE_DIR:?Set RUNNER_WORKSPACE_DIR}
+    group_add:
+      - ${DOCKER_GID:?Set DOCKER_GID}
+    ports:
+      - 127.0.0.1:${BACKEND_PORT:-4000}:4000
+    networks:
+      - application
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 15s
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:4000/api/v1/health').then(async response => { const body = await response.json(); process.exit(response.ok && body.data?.database?.status === 'connected' ? 0 : 1); }).catch(() => process.exit(1));",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    image: ai-code-error-feedback-frontend:${APP_IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        BACKEND_API_URL: http://backend:4000
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      BACKEND_API_URL: http://backend:4000
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - ${FRONTEND_PORT:-3000}:3000
+    networks:
+      - application
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /app/frontend/.next/cache:size=64m,uid=10001,gid=10001,mode=0700
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 15s
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/').then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1));",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+networks:
+  application:
+    driver: bridge
+
+volumes:
+  mongodb-data:
