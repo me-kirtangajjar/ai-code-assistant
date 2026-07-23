@@ -24,12 +24,14 @@ export const useExecution = (): UseExecutionResult => {
   const execute = useCallback(
     async (code: string): Promise<void> => {
       if (!code.trim()) {
-        setError('Enter Python code before running it.');
+        setError('Enter code before running it.');
+        setIsRunning(false);
         return;
       }
 
-      if (code.length > 100_000) {
-        setError('Python code must contain at most 100000 characters.');
+      if (code.length > 100000) {
+        setError('Code must contain at most 100000 characters.');
+        setIsRunning(false);
         return;
       }
 
@@ -48,7 +50,7 @@ export const useExecution = (): UseExecutionResult => {
         setResult(null);
         const resolvedError = resolveProtectedRequestError(
           requestError,
-          'Python execution could not be completed.',
+          'Execution could not be completed.',
         );
         if (resolvedError.shouldLogout) logout();
         setError(resolvedError.message);

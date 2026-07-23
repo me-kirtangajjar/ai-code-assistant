@@ -24,7 +24,7 @@ const statusStyles = {
 
 const statusLabels = {
   success: 'Success',
-  python_error: 'Python error',
+  python_error: 'Execution error',
   runner_error: 'Runner error',
 } as const;
 
@@ -103,7 +103,7 @@ export function ExecutionResult({ result, onUseCode }: ExecutionResultProps) {
           <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
             Execution result
           </p>
-          <h2 className="mt-1 text-xl font-bold text-slate-950">Python output</h2>
+          <h2 className="mt-1 text-xl font-bold text-slate-950">Execution output</h2>
         </div>
         <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusStyles[result.status]}`}>
           {statusLabels[result.status]}
@@ -221,7 +221,7 @@ export function ExecutionResult({ result, onUseCode }: ExecutionResultProps) {
                       <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-950 shadow-sm">
                         <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-3 py-2">
                           <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-                            Python
+                            Code
                           </span>
                           <div className="flex items-center gap-2">
                             <button

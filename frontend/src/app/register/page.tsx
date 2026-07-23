@@ -72,7 +72,7 @@ export default function RegisterPage() {
               Start learning
             </h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Register to execute Python securely and understand reported errors.
+              Register to execute code securely and understand reported errors.
             </p>
           </div>
 

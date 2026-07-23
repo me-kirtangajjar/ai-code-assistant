@@ -22,7 +22,7 @@ function HistoryContent() {
         <p className="text-sm font-semibold text-blue-700">Saved submissions</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">Execution history</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Review your previous Python runs and educational feedback.
+          Review your previous code runs and educational feedback.
         </p>
       </div>
 
@@ -38,7 +38,7 @@ function HistoryContent() {
         <Card className="p-8 text-center sm:p-12">
           <h2 className="text-xl font-bold text-slate-950">No submissions yet</h2>
           <p className="mt-2 text-sm text-slate-600">
-            Run your first Python program to create a saved history item.
+            Run your first program to create a saved history item.
           </p>
           <Link
             className="mt-5 inline-flex min-h-11 items-center rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white"

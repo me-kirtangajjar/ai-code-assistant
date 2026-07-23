@@ -30,16 +30,16 @@ function DashboardContent() {
     <Container as="main" className="py-8 lg:py-10">
       <div className="mb-7 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-blue-700">Python workspace</p>
+          <p className="text-sm font-semibold text-blue-700">Code workspace</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">
             Welcome{user?.name ? `, ${user.name}` : ''}
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            Run Python and review output, interpreter errors, and educational feedback.
+            Run code and review output, interpreter errors, and educational feedback.
           </p>
         </div>
         <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
-          Python · 5 second limit · No stdin
+          Code · 5 second limit · No stdin
         </div>
       </div>
 
@@ -54,7 +54,7 @@ function DashboardContent() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-bold text-slate-950">Code editor</h2>
-              <p className="mt-1 text-sm text-slate-500">Write or paste Python source code.</p>
+              <p className="mt-1 text-sm text-slate-500">Write or paste your source code.</p>
             </div>
             <Button
               type="button"
@@ -69,13 +69,13 @@ function DashboardContent() {
           <CodeEditor value={code} onChange={handleCodeChange} readOnly={isRunning} />
 
           <div className="mt-3 flex justify-between gap-4 text-xs text-slate-500">
-            <span>Python source only</span>
+            <span>Source code only</span>
             <span>{code.length.toLocaleString()} / 100,000 characters</span>
           </div>
         </Card>
 
         <Card className="min-h-[520px] p-4 sm:p-6" aria-live="polite" aria-busy={isRunning}>
-          {isRunning ? <Loading label="Python is running securely…" /> : null}
+          {isRunning ? <Loading label="Code is running securely…" /> : null}
 
           {!isRunning && error ? <ErrorMessage message={error} title="Execution failed" /> : null}
 

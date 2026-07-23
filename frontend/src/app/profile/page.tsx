@@ -13,7 +13,7 @@ function ProfileContent() {
         <p className="text-sm font-semibold text-blue-700">Student account</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">Profile</h1>
         <p className="mt-2 text-sm text-slate-600">
-          View your account details and Python execution statistics.
+          View your account details and execution statistics.
         </p>
       </div>
 
@@ -78,7 +78,7 @@ function ProfileContent() {
               </div>
             </div>
             <p className="mt-5 text-sm leading-6 text-slate-500">
-              Failed runs include Python errors and runner failures. Statistics are read-only and
+              Failed runs include execution errors and runner failures. Statistics are read-only and
               scoped to your account.
             </p>
           </Card>

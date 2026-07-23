@@ -11,7 +11,7 @@ const statusStyles = {
 
 const statusLabels = {
   success: 'Success',
-  python_error: 'Python error',
+  python_error: 'Execution error',
   runner_error: 'Runner error',
 } as const;
 

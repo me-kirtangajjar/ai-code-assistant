@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     default: 'Code Insight',
     template: '%s | Code Insight',
   },
-  description: 'Run Python securely and understand interpreter-reported errors.',
+  description: 'Run code securely and understand educational error feedback.',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

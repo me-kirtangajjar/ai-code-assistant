@@ -6,7 +6,7 @@ import { Loading } from '../ui/Loading';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
   ssr: false,
-  loading: () => <Loading label="Loading Python editor…" />,
+  loading: () => <Loading label="Loading editor…" />,
 });
 
 interface CodeEditorProps {
@@ -19,7 +19,7 @@ export function CodeEditor({ value, onChange, readOnly = false }: CodeEditorProp
   return (
     <div
       className="overflow-hidden rounded-lg border border-slate-300"
-      aria-label="Python code editor"
+      aria-label="Code editor"
     >
       <MonacoEditor
         height="430px"

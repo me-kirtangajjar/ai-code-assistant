@@ -27,13 +27,13 @@ export function Navbar() {
   return (
     <header className="border-b border-slate-200 bg-white">
       <Container className="flex min-h-16 flex-wrap items-center justify-between gap-3 py-3">
-        <Link className="flex items-center gap-3" href={isAuthenticated ? '/dashboard' : '/login'}>
+        <Link className="flex items-center gap-3" href="/">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700 font-mono text-sm font-bold text-white">
             {'</>'}
           </span>
           <span>
             <span className="block text-sm font-bold text-slate-950">Code Insight</span>
-            <span className="hidden text-xs text-slate-500 sm:block">Python Error Feedback</span>
+            <span className="hidden text-xs text-slate-500 sm:block">AI Error Feedback</span>
           </span>
         </Link>
 

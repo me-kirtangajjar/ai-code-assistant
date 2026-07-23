@@ -66,7 +66,7 @@ export default function LoginPage() {
             <p className="text-sm font-semibold text-blue-700">Student workspace</p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">Welcome back</h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Log in to run Python and review educational error feedback.
+              Log in to run code and review educational error feedback.
             </p>
           </div>
 

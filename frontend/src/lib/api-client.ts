@@ -12,7 +12,7 @@ const fallbackMessages: Readonly<Record<number, string>> = {
   422: 'The code produced more output than the allowed limit.',
   500: 'The server encountered an unexpected error.',
   503: 'The service is temporarily unavailable. Please try again.',
-  504: 'Python execution exceeded the allowed time.',
+  504: 'Execution exceeded the allowed time.',
 };
 
 export class ApiClientError extends Error {
