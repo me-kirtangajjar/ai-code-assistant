@@ -54,16 +54,6 @@ export function ExecutionResult({ result, onUseCode }: ExecutionResultProps) {
   const [activeTab, setActiveTab] = useState<'what' | 'why' | 'fix' | 'code'>('what');
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    setAiExplanation(result.aiExplanation);
-    setAiError(false);
-    
-    if ((result.status === 'python_error' || result.status === 'runner_error') && !result.aiExplanation && accessToken) {
-      void handleGenerateAI();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result.id]);
-
   const handleGenerateAI = async () => {
     if (!accessToken) return;
     setIsGeneratingAI(true);
@@ -77,6 +67,17 @@ export function ExecutionResult({ result, onUseCode }: ExecutionResultProps) {
       setIsGeneratingAI(false);
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line
+    setAiExplanation(result.aiExplanation);
+    setAiError(false);
+    
+    if ((result.status === 'python_error' || result.status === 'runner_error') && !result.aiExplanation && accessToken) {
+      void handleGenerateAI();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result.id]);
 
   const handleCopy = async (code: string) => {
     try {

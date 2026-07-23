@@ -1,10 +1,5 @@
 import type { AIExplanationSections } from '@/types';
 
-const cleanMarkdownLabel = (value: string): string =>
-  value
-    .replace(/^#{1,6}\s+/gm, '')
-    .replace(/^\*\*(.+)\*\*:?$/gm, '$1')
-    .trim();
 
 export const parseAIExplanation = (value: string): AIExplanationSections => {
   const extractSection = (header: string, nextHeader?: string): string | null => {
