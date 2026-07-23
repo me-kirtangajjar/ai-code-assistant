@@ -44,7 +44,7 @@ export const generateExplanationForExecution = async (
   provider: AIProvider,
   context: ExecutionExplanationContext,
 ): Promise<string | null> => {
-  if (context.status !== 'python_error') {
+  if (context.status !== 'python_error' && context.status !== 'runner_error') {
     logger.info('AI explanation skipped because Python did not report an error.', {
       executionStatus: context.status,
     });

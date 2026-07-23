@@ -66,7 +66,7 @@ export const generateExplanationForSubmission = async (
     throw new AppError(404, 'SUBMISSION_NOT_FOUND', 'The requested submission could not be found.');
   }
 
-  if (submission.status !== 'python_error') {
+  if (submission.status !== 'python_error' && submission.status !== 'runner_error') {
     return toSubmissionResponse(submission);
   }
 

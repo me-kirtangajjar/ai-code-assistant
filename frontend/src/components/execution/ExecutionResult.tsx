@@ -58,7 +58,7 @@ export function ExecutionResult({ result, onUseCode }: ExecutionResultProps) {
     setAiExplanation(result.aiExplanation);
     setAiError(false);
     
-    if (result.status === 'python_error' && !result.aiExplanation && accessToken) {
+    if ((result.status === 'python_error' || result.status === 'runner_error') && !result.aiExplanation && accessToken) {
       void handleGenerateAI();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -142,7 +142,7 @@ export function ExecutionResult({ result, onUseCode }: ExecutionResultProps) {
         <p className="text-sm text-slate-500 italic">No output.</p>
       )}
 
-      {result.status === 'python_error' && (
+      {(result.status === 'python_error' || result.status === 'runner_error') && (
         <section className="border-t border-slate-200 pt-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -162,7 +162,6 @@ export function ExecutionResult({ result, onUseCode }: ExecutionResultProps) {
             <div className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-50 p-8 text-slate-500">
               <Loader2 className="mb-3 h-8 w-8 animate-spin text-blue-500" />
               <p className="text-sm font-medium text-slate-700">Generating AI feedback…</p>
-              <p className="mt-1 text-xs text-slate-500">Gemini is analyzing your code</p>
             </div>
           ) : aiError ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-red-200 bg-red-50 p-8 text-center">
@@ -219,28 +218,31 @@ export function ExecutionResult({ result, onUseCode }: ExecutionResultProps) {
                 {activeTab === 'code' && (
                   <div>
                     {aiSections.correctedCode ? (
-                      <div>
-                        <div className="mb-4 flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={() => void handleCopy(aiSections.correctedCode!)}
-                            className="flex items-center gap-2"
-                          >
-                            <Copy className="h-4 w-4" /> {copied ? 'Copied!' : 'Copy corrected code'}
-                          </Button>
-                          {onUseCode && (
-                            <Button
+                      <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-950 shadow-sm">
+                        <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-3 py-2">
+                          <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                            Python
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
                               type="button"
-                              variant="secondary"
-                              onClick={() => onUseCode(aiSections.correctedCode!)}
-                              className="flex items-center gap-2 !bg-blue-50 !text-blue-700 hover:!bg-blue-100 !border-blue-200"
+                              onClick={() => void handleCopy(aiSections.correctedCode!)}
+                              className="flex items-center gap-1.5 rounded bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-slate-300 transition-colors hover:bg-slate-700 hover:text-white focus:outline-none focus:ring-1 focus:ring-slate-500"
                             >
-                              <Code className="h-4 w-4" /> Use this code in editor
-                            </Button>
-                          )}
+                              <Copy className="h-3 w-3" /> {copied ? 'Copied!' : 'Copy'}
+                            </button>
+                            {onUseCode && (
+                              <button
+                                type="button"
+                                onClick={() => onUseCode(aiSections.correctedCode!)}
+                                className="flex items-center gap-1.5 rounded bg-blue-600/20 px-2.5 py-1 text-[11px] font-medium text-blue-400 transition-colors hover:bg-blue-600/30 hover:text-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              >
+                                <Code className="h-3 w-3" /> Use in editor
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <pre className="overflow-auto rounded-lg bg-slate-950 p-4 font-mono text-xs leading-5 text-slate-100">
+                        <pre className="m-0 overflow-auto p-4 font-mono text-xs leading-5 text-slate-100">
                           {aiSections.correctedCode}
                         </pre>
                       </div>
